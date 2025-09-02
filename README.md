@@ -15,4 +15,4 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 # .env must contain: OPENAI_API_KEY=your_key_here
-python app.py
+python app.py# cardIQ
