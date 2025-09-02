@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# node / react
+CardIQ-frontend/node_modules/
+CardIQ-frontend/.env.local
+CardIQ-frontend/.next/
+CardIQ-frontend/dist/
+CardIQ-frontend/build/
+
+# python / flask
+CardIQ-backend/venv/
+CardIQ-backend/__pycache__/
+CardIQ-backend/*.pyc
+CardIQ-backend/.env
+CardIQ-backend/uploads/
+
+# misc
+*.log
+
