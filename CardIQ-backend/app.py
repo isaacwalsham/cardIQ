@@ -29,15 +29,21 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# allow your local dev + production domains
+# CORS: allow your production domains + local dev
+# TEMPORARY: also allow http:// origins until Netlify HTTPS redirect is fully working.
+# once your certificate is active and "force HTTPS" is enabled,
+# remove the two http:// entries below for tighter security.
 CORS(app, resources={
     r"/*": {
         "origins": [
-            "http://localhost:3000",
+            # production HTTPS (keep)
             "https://card-iq.co.uk",
             "https://www.card-iq.co.uk",
-            # keep your Netlify subdomain while DNS/SSL propagates
-            "https://card-iq.netlify.app"
+            # TEMP: allow HTTP while SSL/redirects are pending
+            "http://card-iq.co.uk",
+            "http://www.card-iq.co.uk",
+            # local dev
+            "http://localhost:3000"
         ]
     }
 })
@@ -65,12 +71,7 @@ def extract_text_from_pdf(file_path: str) -> str:
 
 # ---- styled PDF builder (grayscale, card boxes) ----
 def build_flashcards_pdf(buffer: BytesIO, title: str, flashcards: list) -> None:
-    """
-    create a clean, grayscale pdf with boxed flashcards
-    - big title
-    - each card has a subtle border, padding, and Q/A layout
-    - avoids splitting a single card across pages when possible
-    """
+    """create a clean, grayscale pdf with boxed flashcards"""
     doc = SimpleDocTemplate(
         buffer,
         pagesize=letter,
@@ -82,7 +83,6 @@ def build_flashcards_pdf(buffer: BytesIO, title: str, flashcards: list) -> None:
         author="CardIQ",
     )
 
-    # styles (grayscale)
     base = getSampleStyleSheet()
     title_style = ParagraphStyle(
         "Title",
@@ -158,9 +158,10 @@ def build_flashcards_pdf(buffer: BytesIO, title: str, flashcards: list) -> None:
     doc.build(story)
 
 # ---------- routes ----------
-@app.route("/healthz")
-def healthz():
-    return {"ok": True}, 200
+@app.route("/healthz", methods=["GET"])
+def health_check():
+    """Simple health check endpoint"""
+    return jsonify({"status": "ok"}), 200
 
 @app.route("/generate", methods=["POST"])
 def generate_flashcards():
@@ -168,24 +169,18 @@ def generate_flashcards():
         text = ""
         file_path = None
 
-        # text via JSON
         if request.is_json:
             data = request.get_json(silent=True) or {}
             text = sanitize_text(data.get("text", ""))
-
-        # or pdf via form-data
         elif "file" in request.files:
             up = request.files["file"]
             if not up or not allowed_pdf(up.filename):
                 return jsonify({"error": "Only PDF uploads are allowed."}), 400
-
             os.makedirs("uploads", exist_ok=True)
             safe_name = secure_filename(up.filename)
             file_path = os.path.join("uploads", safe_name)
             up.save(file_path)
-
             text = sanitize_text(extract_text_from_pdf(file_path))
-
         else:
             return jsonify({"error": "No input provided."}), 400
 
@@ -241,10 +236,7 @@ def generate_flashcards():
 
 @app.route("/download", methods=["POST"])
 def download_flashcards():
-    """
-    return a STYLED pdf (grayscale, boxed cards) built with reportlab
-    expects: { flashcards: [...], filename?: "name to save as" }
-    """
+    """Generate and return a styled PDF of flashcards"""
     try:
         data = request.get_json(silent=True) or {}
         flashcards = data.get("flashcards", [])
@@ -269,5 +261,5 @@ def download_flashcards():
 
 # ---------- main ----------
 if __name__ == "__main__":
-    # for local dev only; Render will use gunicorn via Procfile
+    # local dev server; Render uses gunicorn via Procfile
     app.run(host="0.0.0.0", port=5000, debug=True)

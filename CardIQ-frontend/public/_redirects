@@ -1,0 +1,4 @@
+# force https and send www to apex
+http://card-iq.co.uk/*      https://card-iq.co.uk/:splat 301!
+http://www.card-iq.co.uk/*  https://card-iq.co.uk/:splat 301!
+https://www.card-iq.co.uk/* https://card-iq.co.uk/:splat 301!
