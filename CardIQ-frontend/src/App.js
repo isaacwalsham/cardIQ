@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import InputSection from "./components/InputSection";
 import FlashcardViewer from "./components/FlashcardViewer";
+import API_BASE from "./config";
 
 function App() {
   const [flashcards, setFlashcards] = useState([]);
@@ -23,11 +24,16 @@ function App() {
   const handleDownload = async () => {
     const safeName = pdfName.trim() || "flashcards";
     try {
-      const res = await fetch("http://127.0.0.1:5000/download", {
+      const res = await fetch(`${API_BASE}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ flashcards, filename: safeName }),
       });
+
+      if (!res.ok) {
+        console.error("Download failed");
+        return;
+      }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -48,12 +54,11 @@ function App() {
       <InputSection
         setFlashcards={setFlashcards}
         setCurrentIndex={setCurrentIndex}
-        hasFlashcards={flashcards.length > 0}   // <-- pass down so we can hide the "or" text once generated
+        hasFlashcards={flashcards.length > 0}
       />
 
       {flashcards.length > 0 && (
         <div className="flex flex-col items-center gap-2 mb-6 mt-2">
-          {/* action buttons */}
           <div className="flex gap-3">
             <button
               className="px-6 py-3 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors text-lg"
@@ -70,12 +75,10 @@ function App() {
             </button>
           </div>
 
-          {/* keep this helper text */}
           <p className="text-gray-500 text-sm mt-2">
             Please name your PDF before saving.
           </p>
 
-          {/* filename input */}
           <input
             type="text"
             placeholder="Enter PDF name"

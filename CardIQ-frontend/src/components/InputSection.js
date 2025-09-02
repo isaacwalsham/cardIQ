@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { X } from "lucide-react";
+import API_BASE from "../config";
 
 function InputSection({ setFlashcards, setCurrentIndex, hasFlashcards }) {
   const [text, setText] = useState("");
@@ -34,13 +35,13 @@ function InputSection({ setFlashcards, setCurrentIndex, hasFlashcards }) {
         const formData = new FormData();
         formData.append("file", file);
 
-        res = await fetch("http://127.0.0.1:5000/generate", {
+        res = await fetch(`${API_BASE}/generate`, {
           method: "POST",
           body: formData,
         });
       } else {
-        // send pasted text as JSON (works with all backend versions)
-        res = await fetch("http://127.0.0.1:5000/generate", {
+        // send pasted text as JSON
+        res = await fetch(`${API_BASE}/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: text.trim() }),
@@ -100,9 +101,7 @@ function InputSection({ setFlashcards, setCurrentIndex, hasFlashcards }) {
       )}
 
       {/* hide the floating "or" once flashcards exist */}
-      {!hasFlashcards && (
-        <span className="text-gray-500 text-lg">or</span>
-      )}
+      {!hasFlashcards && <span className="text-gray-500 text-lg">or</span>}
 
       {/* file picker OR selected-file row with remove (X) */}
       {!file ? (
